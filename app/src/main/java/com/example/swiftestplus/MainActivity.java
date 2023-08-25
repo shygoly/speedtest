@@ -1,0 +1,586 @@
+package com.example.swiftestplus;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.Button;
+import android.Manifest;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.example.swiftestplus.Service.ControllerService;
+import com.example.swiftestplus.Service.HttpCallback;
+import com.example.swiftestplus.Service.WsService;
+import com.example.swiftestplus.Utils.GUIDUtils;
+import com.example.swiftestplus.Utils.NetworkInfo;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Map;
+
+public class MainActivity extends AppCompatActivity {
+    private final Handler handler  = new Handler(Looper.getMainLooper());
+    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
+    public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    NetworkInfo network_info;
+    String guid;
+    GUIDUtils guidUtils;
+    ControllerService controllerService;
+    String BPS;
+    String testID;
+    WsService wsService;
+    Float testDuration;
+    public Double testTraffic;
+    public Float bandwidth;
+
+    // UI组件
+    ImageView ball;
+    FrameLayout ballFrame;
+    TextView startText;
+    TextView bandwidthText;
+    TextView bandwidthLabelUp;
+    TextView bandwidthLabelDown;
+    LinearLayout testInfoView;
+    TextView networkTypeView;
+    TextView networkDetailView;
+    TextView testDurationView;
+    TextView testTrafficView;
+    LineChart lineChart;
+    public ArrayList<Entry> chartValues;
+    FrameLayout chartFrame;
+
+    ObjectAnimator ballRotation;
+
+    float ballBasicWidth;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        ball = findViewById(R.id.ball);
+        ballFrame = findViewById(R.id.ball_frame);
+        startText = findViewById(R.id.start_text);
+        bandwidthText = findViewById(R.id.bandwidth_text);
+        bandwidthLabelUp = findViewById(R.id.bandwidth_label_up);
+        bandwidthLabelDown = findViewById(R.id.bandwidth_label_down);
+        testInfoView = findViewById(R.id.test_info_layout);
+        networkTypeView = findViewById(R.id.network_type);
+        networkDetailView = findViewById(R.id.network_detail);
+        testDurationView = findViewById(R.id.test_duration);
+        testTrafficView = findViewById(R.id.test_traffic);
+        chartFrame = findViewById(R.id.chart_frame);
+        lineChart = findViewById(R.id.line_chart);
+
+        guidUtils = new GUIDUtils(this);
+        guid = guidUtils.getGuid();
+
+        initLineChart();
+
+        // 获取授权 && 展示网络信息
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)!= PackageManager.PERMISSION_GRANTED){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_PHONE_STATE)) {
+                // todo: 重新获取网络授权
+            }
+            else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+            }
+        }
+
+        // 获取位置信息
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                // todo: 重新获取位置授权
+            }
+            else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+            }
+        }
+
+        // 设置上滑事件：开始测速
+        ballFrame.setOnTouchListener(new View.OnTouchListener() {
+            float downY;
+            float originalY;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downY = event.getY();
+                        originalY = v.getY();
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float deltaY = event.getY()-downY;
+                        float newY = originalY+Math.max(deltaY, -60);
+                        if (deltaY<0) {
+                            v.setY(newY);
+                        }
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        setTestStartUI();
+                        break;
+                }
+                return true;
+            }
+        });
+
+    }
+
+    // 1. 网络信息
+    // 1.1 展示网络信息
+    public void getAndShowNetworkInfo() {
+        network_info = new NetworkInfo(this, this);
+        network_info.getNetworkInfo();
+        if (network_info.isConnected()){
+            if (network_info.getNetwork_type() == "WiFi"){
+                networkTypeView.setText("网络类型：WiFi");
+                networkDetailView.setText("    WiFi名称：" + network_info.getWifi_name());
+            }
+            else {
+                networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
+                networkDetailView.setText("    运营商：" + network_info.getCellular_carrier());
+            }
+        }
+        else {
+            networkTypeView.setText("当前设备未连接到网络");
+        }
+    }
+    // 1.2 授权处理
+    public void onRequestPermissionResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getAndShowNetworkInfo();
+                }
+                else {
+                    // todo: 用户拒绝权限
+                }
+            }
+        }
+    }
+    // 1.3 测速信息展示
+    public void showTestInfo() {
+        testDuration = chartValues.get(chartValues.size()-1).getX();
+        testDurationView.setText("测试时长：" + String.format("%.1f", testDuration) + "秒");
+        testTrafficView.setText("    耗费流量：" + String.format("%.1f", testTraffic) + "MB");
+    }
+    // 1.4 重置测速信息
+    public void resetTestInfo() {
+        networkTypeView.setText("");
+        networkDetailView.setText("");
+        testDurationView.setText("");
+        testTrafficView.setText("");
+    }
+
+    // 2. 动画效果
+    // 2.1 淡入淡出
+    private AlphaAnimation fadeIn(int ms) {
+        AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
+        fadeIn.setDuration(ms);
+        return fadeIn;
+    }
+    private AlphaAnimation fadeOut(int ms) {
+        AlphaAnimation fadeOut = new AlphaAnimation(1.0f, 0.0f);
+        fadeOut.setDuration(ms);
+        return fadeOut;
+    }
+    private AlphaAnimation fadeOutAndIn(final TextView view, int ms, String text) {
+        AlphaAnimation fadeOutAndIn = new AlphaAnimation(1.0f, 0.0f);
+        fadeOutAndIn.setDuration(ms/2);
+        fadeOutAndIn.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) { }
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                view.setText(text);
+                view.startAnimation(fadeIn(ms/2));
+                view.setVisibility(View.VISIBLE);
+            }
+            @Override
+            public void onAnimationRepeat(Animation animation) { }
+        });
+        return fadeOutAndIn;
+    }
+    // 2.2 移动
+    private void moveTexts() {
+        float textStart = bandwidthText.getLeft();
+        float labelStartX = bandwidthLabelDown.getLeft();
+        float labelStartY = bandwidthLabelDown.getBottom();
+        float textDest = (bandwidthText.getRootView().getWidth()-(bandwidthText.getWidth()+bandwidthLabelDown.getWidth()+20f))/2f;
+        float textDelta = textDest - textStart;
+        float labelDestX = textDest + bandwidthText.getWidth() + 20f;
+        float labelDeltaX = labelDestX - labelStartX;
+        float labelDestY = bandwidthText.getBottom();
+        float labelDeltaY = labelDestY - labelStartY;
+        ObjectAnimator bandwidthX = ObjectAnimator.ofFloat(bandwidthText, "translationX", textDelta);
+        ObjectAnimator labelX = ObjectAnimator.ofFloat(bandwidthLabelDown, "translationX", labelDeltaX);
+        ObjectAnimator labelY = ObjectAnimator.ofFloat(bandwidthLabelDown, "translationY", labelDeltaY-bandwidthText.getHeight()*0.1f);
+        ObjectAnimator infoY = ObjectAnimator.ofFloat(testInfoView, "translationY", -40f);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playTogether(bandwidthX, labelX, labelY, infoY);
+        animatorSet.setDuration(400);
+        animatorSet.start();
+    }
+    private void moveTextsBack() {
+        ObjectAnimator bandwidthX = ObjectAnimator.ofFloat(bandwidthText, "translationX", bandwidthText.getTranslationX(), 0);
+        ObjectAnimator labelX = ObjectAnimator.ofFloat(bandwidthLabelDown, "translationX", bandwidthLabelDown.getTranslationX(), 0);
+        ObjectAnimator labelY = ObjectAnimator.ofFloat(bandwidthLabelDown, "translationY", bandwidthLabelDown.getTranslationY(), 0);
+        ObjectAnimator infoY = ObjectAnimator.ofFloat(testInfoView, "translationY", testInfoView.getTranslationY(), 0);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playTogether(bandwidthX, labelX, labelY);
+        animatorSet.start();
+    }
+    // 2.3 移动 & 旋转 & 调整大小
+    private void ballUpAndRotate() {
+        float density = getResources().getDisplayMetrics().density;
+        int[] upLabelLocation = new int[2];
+        bandwidthLabelUp.getLocationOnScreen(upLabelLocation);
+        Log.d("UI", "upLabelTop: " + upLabelLocation[1]/density);
+        float ballScaleSize = upLabelLocation[1] * 0.75f * 2f / density;
+        int time;
+        if (startText.getText().equals("上拉开始")) {
+            time = 400;
+        } else {
+            time = 800;
+        }
+        float startY = ballFrame.getTranslationY();
+        float endY = -ballFrame.getTop()-ballScaleSize/2;
+        ObjectAnimator ballMoveUp = ObjectAnimator.ofFloat(ballFrame, "translationY", startY, endY);
+        ObjectAnimator ballRotate = ObjectAnimator.ofFloat(ballFrame, "rotation", ballFrame.getRotation(), ballFrame.getRotation()+60f);
+        ObjectAnimator ballScaleX = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), ballScaleSize/240);
+        ObjectAnimator ballScaleY = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), ballScaleSize/240);
+        AnimatorSet ballAnimations = new AnimatorSet();
+        ballAnimations.playTogether(ballMoveUp, ballRotate, ballScaleX, ballScaleY);
+        ballAnimations.setDuration(time);
+        ballAnimations.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                // 动画结束后测试开始
+                testBandwidth();
+            }
+        });
+        ballAnimations.start();
+    }
+    private void ballRotate() {
+        ballRotation = ObjectAnimator.ofFloat(ballFrame, "rotation", ballFrame.getRotation(), ballFrame.getRotation()+720f);
+        ballRotation.setDuration(4800);
+        ballRotation.setRepeatCount(ValueAnimator.INFINITE);
+        ballRotation.setInterpolator(new AccelerateDecelerateInterpolator());
+    }
+    private void ballAgain() {
+        // 向上移出屏幕
+        float startY = ballFrame.getTranslationY();
+        float endY = -ballFrame.getHeight()-ballFrame.getTop();
+        ObjectAnimator ballMoveUpTop = ObjectAnimator.ofFloat(ballFrame, "translationY",  startY, endY);
+        ObjectAnimator ballRotateTop = ObjectAnimator.ofFloat(ballFrame, "Rotation", ballFrame.getRotation(), ballFrame.getRotation()+30f);
+        ObjectAnimator ballScaleXTop = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), 0.8f);
+        ObjectAnimator ballScaleYTop = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), 0.8f);
+        AnimatorSet ballTop = new AnimatorSet();
+        ballTop.playTogether(ballMoveUpTop, ballRotateTop, ballScaleXTop, ballScaleYTop);
+        ballTop.setDuration(400);
+        ballTop.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                updateLineChart();
+                // 更新测速文字
+                bandwidthLabelUp.startAnimation(fadeOutAndIn(bandwidthLabelUp, 400, "下行带宽"));
+                bandwidthLabelUp.setVisibility(View.INVISIBLE);
+                moveTexts();
+                testInfoView.startAnimation(fadeIn(400));
+                testInfoView.setVisibility(View.VISIBLE);
+                // 从屏幕下方出现
+                super.onAnimationEnd(animation);
+                float distanceToBottom = ballFrame.getRootView().getHeight() - ballFrame.getTop();
+                ballFrame.setTranslationY(distanceToBottom);
+                float startY = ballFrame.getTranslationY();
+                float endY = startY-ballFrame.getRootView().getHeight()*0.35f;
+                ObjectAnimator ballMoveBottom = ObjectAnimator.ofFloat(ballFrame, "translationY", startY, endY);
+                ObjectAnimator ballRotateBottom = ObjectAnimator.ofFloat(ballFrame, "Rotation", ballFrame.getRotation(), ballFrame.getRotation()+30f);
+                ObjectAnimator ballScaleXBottom = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), 0.5f);
+                ObjectAnimator ballScaleYBottom = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), 0.5f);
+                AnimatorSet ballBottom = new AnimatorSet();
+                ballBottom.playTogether(ballMoveBottom, ballRotateBottom, ballScaleXBottom, ballScaleYBottom);
+                ballBottom.setDuration(400);
+                ballBottom.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        super.onAnimationEnd(animation);
+                        ballFrame.setEnabled(true);
+                    }
+                });
+                ballBottom.start();
+                startTextAgain();
+            }
+        });
+        ballTop.start();
+    }
+    private void startTextAgain() {
+        startText.setText("上拉重测");
+        startText.startAnimation(fadeIn(400));
+        startText.setVisibility(View.VISIBLE);
+        float ballRotation = ballFrame.getRotation();
+        startText.setRotation(-ballRotation-30);
+    }
+    // 2.3 折线图
+    private void initLineChart() {
+        // 坐标轴不可见
+//        lineChart.getXAxis().setEnabled(false);
+        lineChart.getAxisLeft().setEnabled(false);
+        lineChart.getAxisRight().setEnabled(false);
+        lineChart.getLegend().setEnabled(false);
+        Description description = new Description();
+        description.setEnabled(false); // 禁用描述
+
+        lineChart.setDescription(description);
+
+
+        int chartColor = ContextCompat.getColor(this, R.color.text_h2);
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setAxisLineColor(chartColor);
+        xAxis.setTextColor(chartColor);
+
+        // 数据
+        chartValues = new ArrayList<>();
+
+        LineDataSet initDataset = new LineDataSet(chartValues, "下行带宽");
+        initDataset.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        initDataset.setDrawCircles(false);
+
+        // todo: 渐变网格线
+
+        ArrayList<ILineDataSet> initDataSets = new ArrayList<>();
+        initDataSets.add(initDataset);
+        LineData initData = new LineData(initDataSets);
+        lineChart.setData(initData);
+        lineChart.invalidate();
+    }
+    public void updateLineChart() {
+        handler.post(() -> {
+            Log.d("Line Chart", chartValues.toString());
+           LineDataSet bandwidthDataset = new LineDataSet(chartValues,"下行带宽");
+
+           // 折线样式
+           bandwidthDataset.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+           bandwidthDataset.setCubicIntensity(0.2f);
+           bandwidthDataset.setLineWidth(3f);
+           bandwidthDataset.setColor(ContextCompat.getColor(this, R.color.text_h2));
+           bandwidthDataset.setDrawCircles(false);
+
+           ArrayList<ILineDataSet> bandwidthDatasets = new ArrayList<>();
+           bandwidthDatasets.add(bandwidthDataset);
+           LineData bandwidthData = new LineData(bandwidthDatasets);
+           lineChart.setData(bandwidthData);
+           lineChart.invalidate();
+            lineChart.animateX(400);
+        });
+    }
+
+    // 3. 测速
+    // 3.1 创建ws线程
+    public void createWsService(String BPS, String guid, String testID) {
+        wsService = new WsService(this, BPS, guid, testID);
+    }
+    // 3.2 测速
+    public void testBandwidth() {
+        setTestingUI();
+        getAndShowNetworkInfo();
+        controllerService = new ControllerService(this);
+        String postUrl = "http://" + controllerService.getControllerIp() + ":" + controllerService.getControllerPort() + "/speedtest/new";
+        try {
+            JSONObject postJson = new JSONObject();
+            postJson.put("network_type", network_info.getNetwork_type());
+            postJson.put("GUID", guid);
+            postJson.put("client", "Android");  //todo: 获取其他操作系统类型
+            controllerService.post(postUrl, postJson.toString(), new HttpCallback() {
+                @Override
+                public void onSuccess(JSONObject json) throws JSONException, InterruptedException {
+                    BPS = json.get("BPS").toString();
+                    testID = json.get("testID").toString();
+                    Log.d("controller", "BPS: " + BPS);
+                    Log.d("controller", "testID: " + testID);
+
+                    //建立WebSocket连接并获取udp端口
+                    if (wsService!=null && wsService.isAlive()) {
+                        wsService.stopService();
+                        wsService.join();
+                    }
+                    createWsService(BPS, guid, testID);
+                    wsService.start();
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    // todo:错误处理
+                    setNetworkIssueUI(1);
+                }
+            });
+        } catch (JSONException e) {
+            // todo:错误处理
+            throw new RuntimeException(e);
+        }
+    }
+    // 3.3 上传测速结果给Controller
+    public void uploadResult() {
+        String postUrl = "http://" + controllerService.getControllerIp() + ":" + controllerService.getControllerPort() + "/speedtest/record";
+        try {
+            JSONObject postJson = new JSONObject();
+            postJson.put("network_type", network_info.getNetwork_type());
+            postJson.put("GUID", guid);
+            postJson.put("download", bandwidth);
+            Log.d("Post", postJson.toString());
+            controllerService.post(postUrl, postJson.toString(), new HttpCallback() {
+                @Override
+                public void onSuccess(JSONObject json) throws JSONException, InterruptedException {
+                    Log.d("Controller", json.toString());
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    Log.d("Controller", "上传测速结果失败");
+                }
+            });
+        } catch (JSONException e) {
+            // todo:错误处理
+            throw new RuntimeException(e);
+        }
+    }
+
+    // 4. 更新UI
+    // 4.1 测速开始UI
+    public void setTestStartUI() {
+        ballFrame.setEnabled(false);
+        chartValues.clear();
+        chartValues.add(new Entry(0, 0));
+        startText.startAnimation(fadeOut(400));
+        startText.setVisibility(View.INVISIBLE);
+        if (bandwidthText.getVisibility() == View.VISIBLE) {
+            AlphaAnimation textFadeOut = fadeOut(400);
+            textFadeOut.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) { }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    resetTestInfo();
+                    moveTextsBack();
+                }
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+
+            bandwidthLabelUp.startAnimation(fadeOut(400));
+            bandwidthLabelUp.setVisibility(View.INVISIBLE);
+            bandwidthLabelDown.startAnimation(textFadeOut);
+            bandwidthLabelDown.setVisibility(View.INVISIBLE);
+            bandwidthText.startAnimation(fadeOut(400));
+            bandwidthText.setVisibility(View.INVISIBLE);
+            testInfoView.startAnimation(fadeOut(400));
+            testInfoView.setVisibility(View.INVISIBLE);
+            chartFrame.startAnimation(fadeOut(400));
+            chartFrame.setVisibility(View.INVISIBLE);
+
+        }
+        ballUpAndRotate();
+    }
+    // 4.2 更新测速结果UI
+    public void updateBandwidthText(float bandwidth) {
+        handler.post(() -> {
+            String formattedBandwidth = String.format(Locale.getDefault(), "%.2f", bandwidth);
+            if (bandwidth < 500) {
+                bandwidthText.setText(formattedBandwidth);
+            } else {
+                bandwidthText.setText("500+");
+            }
+        });
+    }
+    // 4.3 更新测速中UI
+    public void setTestingUI() {
+        handler.post(() -> {
+            //显示测速文本
+            bandwidthLabelUp.setText("测速中");
+            bandwidthText.startAnimation(fadeIn(400));
+            bandwidthText.setVisibility(View.VISIBLE);
+            bandwidthLabelUp.startAnimation(fadeIn(400));
+            bandwidthLabelUp.setVisibility(View.VISIBLE);
+            bandwidthLabelDown.startAnimation(fadeIn(400));
+            bandwidthLabelDown.setVisibility(View.VISIBLE);
+            chartFrame.startAnimation(fadeIn(400));
+            chartFrame.setVisibility(View.VISIBLE);
+
+            //转球
+            ballRotate();
+            ballRotation.start();
+        });
+    }
+    // 4.4 更新测速结束UI
+    public void setTestEndUI() {
+        handler.post(() -> {
+            ballRotation.cancel();
+            ballAgain();
+        });
+    }
+    // 4.5 更新测试成功结束UI
+    public void setTestSuccessUI() {
+        handler.post(() -> {
+            uploadResult();
+           showTestInfo();
+           setTestEndUI();
+        });
+    }
+    // 4.6 更新网络问题UI
+    public void setNetworkIssueUI(int errorCode) {
+        handler.post(() -> {
+            bandwidthText.setText("0.00");
+            networkDetailView.setText("");
+            testDurationView.setText("");
+            testTrafficView.setText("");
+            if (errorCode == 1){
+                networkTypeView.setText("网络错误，请检查您的网络连接后重试");
+            }
+            else if (errorCode == 2){
+                networkTypeView.setText("服务器开小差，请稍后重试");
+            }
+            else if (errorCode == 3) {
+                networkTypeView.setText("网络信息请求失败，请在”设置“中授权我们获取您的电话信息和位置信息。");
+            }
+            setTestEndUI();
+        });
+    }
+}

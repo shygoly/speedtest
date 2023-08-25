@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_dark"
+    tools:context=".MainActivity"
+    android:clipChildren="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:clipChildren="false">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false">
+
+            <LinearLayout
+                android:id="@+id/copyright_text_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/copyright_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="技术支持：清华大学软件学院移动云计算与未来网络实验室"
+                    android:textColor="@color/text_unimportant"
+                    android:textSize="12dp"
+                    android:layout_marginBottom="0dp"
+                    android:layout_gravity="bottom|center_horizontal"/>
+                <TextView
+                    android:id="@+id/support_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="© 2023 北京水木移云 版权所有"
+                    android:textColor="@color/text_unimportant"
+                    android:textSize="12dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_gravity="bottom|center_horizontal"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/bandwidth_label_up"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bandwidth_label_up"
+                    android:textColor="@color/text_h2"
+                    android:textSize="28dp"
+                    android:textStyle="bold"
+                    android:shadowColor="#A7000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="5"
+                    android:visibility="invisible"
+                    />
+
+                <TextView
+                    android:id="@+id/bandwidth_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bandwidth_text"
+                    android:textColor="@color/text_h1"
+                    android:textSize="60dp"
+                    android:fontFamily="Arial"
+                    android:textStyle="bold"
+                    android:shadowColor="#A7000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="5"
+                    android:visibility="invisible"
+                    />
+
+                <TextView
+                    android:id="@+id/bandwidth_label_down"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bandwidth_label_down"
+                    android:textColor="@color/text_h2"
+                    android:textSize="28dp"
+                    android:textStyle="bold"
+                    android:shadowColor="#A7000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="5"
+                    android:visibility="invisible"
+                    />
+
+                <LinearLayout
+                    android:id="@+id/test_info_layout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="invisible">
+
+                    <LinearLayout
+                        android:id="@+id/test_info_column_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/network_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxWidth="320dp"
+                            android:text="@string/network_info"
+                            android:textColor="@color/text_h2"
+                            android:textSize="16dp"
+                            android:layout_marginBottom="6dp"
+                            />
+
+                        <TextView
+                            android:id="@+id/test_duration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_h2"
+                            android:textSize="16dp"
+                            android:layout_marginBottom="6dp"
+                            />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/test_info_column_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/network_detail"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_h2"
+                            android:textSize="16dp"
+                            android:layout_marginBottom="6dp"
+                            />
+
+                        <TextView
+                            android:id="@+id/test_traffic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_h2"
+                            android:textSize="16dp"
+                            android:layout_marginBottom="6dp"
+                            />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+
+                <FrameLayout
+                    android:id="@+id/chart_frame"
+                    android:layout_width="360dp"
+                    android:layout_height="140dp"
+                    android:visibility="invisible">
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/line_chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/ball_frame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center">
+
+                <ImageView
+                    android:id="@+id/ball"
+                    android:layout_width="240dp"
+                    android:layout_height="240dp"
+                    android:src="@drawable/ball" />
+
+                <TextView
+                    android:id="@+id/start_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="上拉开始"
+                    android:textColor="@color/text_h1"
+                    android:textSize="36dp"
+                    android:fontFamily="Arial"
+                    android:textStyle="bold"
+                    android:shadowColor="#A7000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="5" />
+
+            </FrameLayout>
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
