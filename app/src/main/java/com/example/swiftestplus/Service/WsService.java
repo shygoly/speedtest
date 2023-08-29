@@ -142,22 +142,53 @@ public class WsService extends Thread{
                                     JSONObject endMsg = new JSONObject();
                                     endMsg.put("msg", "finish");
                                     endMsg.put("download", udpService.downloadSpeed);
-                                    webSocket.send(endMsg.toString());
-                                    activity.chartValues.add(new Entry((endTime-startTime)/1000.0f, udpService.downloadSpeed));
-                                    activity.updateBandwidthText(udpService.downloadSpeed);
-//                                    activity.setTestEndUI();
-//                                    stopService();
+                                    // 超时器
+                                    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+                                    ScheduledFuture<?> sendTimeoutTask = executorService.schedule(() -> {
+                                        Log.d("WebSocket", "Send timeout");
+                                        activity.setNetworkIssueUI(1);
+                                        stopService();
+                                    }, 1, TimeUnit.SECONDS);
+                                    boolean isSent = webSocket.send(endMsg.toString());
+                                    if (isSent) {
+                                        sendTimeoutTask.cancel(false);
+                                        Log.d("WebSocket", "Send:" + endMsg.toString());
+                                        activity.chartValues.add(new Entry((endTime-startTime)/1000.0f, udpService.downloadSpeed));
+                                        activity.updateBandwidthText(udpService.downloadSpeed);
+                                        receiveTimeoutTask = executorService.schedule(() -> {
+                                            Log.d("WebSocket", "Receive timeout");
+                                            activity.setNetworkIssueUI(2);
+                                            stopService();
+                                        }, 1, TimeUnit.SECONDS);
+                                    }
                                 } else {
                                     // 饱和，同速度再发
                                     JSONObject repeatMsg = new JSONObject();
                                     repeatMsg.put("msg", "repeat");
+
                                     webSocket.send(repeatMsg.toString());
                                 }
                             } else {
                                 // 不饱和，加速
                                 JSONObject raiseMsg = new JSONObject();
                                 raiseMsg.put("msg", "continue");
-                                webSocket.send(raiseMsg.toString());
+                                // 超时器
+                                ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+                                ScheduledFuture<?> sendTimeoutTask = executorService.schedule(() -> {
+                                    Log.d("WebSocket", "Send timeout");
+                                    activity.setNetworkIssueUI(1);
+                                    stopService();
+                                }, 1, TimeUnit.SECONDS);
+                                boolean isSent = webSocket.send(raiseMsg.toString());
+                                if (isSent) {
+                                    sendTimeoutTask.cancel(false);
+                                    Log.d("WebSocket", "Send:" + raiseMsg.toString());
+                                    receiveTimeoutTask = executorService.schedule(() -> {
+                                        Log.d("WebSocket", "Receive timeout");
+                                        activity.setNetworkIssueUI(2);
+                                        stopService();
+                                    }, 1, TimeUnit.SECONDS);
+                                }
                             }
                             udpService.getSingle = false;
                         } else if (responseJson.get("msg").equals("exceed")) {
@@ -165,10 +196,24 @@ public class WsService extends Thread{
                             JSONObject endMsg = new JSONObject();
                             endMsg.put("msg", "finish");
                             endMsg.put("download", 500);
-                            webSocket.send(endMsg.toString());
-                            activity.updateBandwidthText(500);
-//                            activity.setTestEndUI();
-//                            stopService();
+                            // 超时器
+                            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+                            ScheduledFuture<?> sendTimeoutTask = executorService.schedule(() -> {
+                                Log.d("WebSocket", "Send timeout");
+                                activity.setNetworkIssueUI(1);
+                                stopService();
+                            }, 1, TimeUnit.SECONDS);
+                            boolean isSent = webSocket.send(endMsg.toString());
+                            if (isSent) {
+                                sendTimeoutTask.cancel(false);
+                                Log.d("WebSocket", "Send:" + endMsg.toString());
+                                activity.updateBandwidthText(500);
+                                receiveTimeoutTask = executorService.schedule(() -> {
+                                    Log.d("WebSocket", "Receive timeout");
+                                    activity.setNetworkIssueUI(2);
+                                    stopService();
+                                }, 1, TimeUnit.SECONDS);
+                            }
                         }
                     } else if (responseJson.has("traffic")) {
                         activity.bandwidth = udpService.downloadSpeed;

@@ -106,6 +106,10 @@ public class UdpService extends Thread{
                     while (true) {
                         datagramSocket.receive(rcvPacket);
                         rcvBytesCount += rcvPacket.getLength();
+                        // 超时
+                        if (rcvBytesRecord.size() >= 100) {
+                            throw new SocketTimeoutException("Text exceed 1 second!");
+                        }
                     }
                 } catch (SocketTimeoutException e) {
                     // 本次收包正常结束
