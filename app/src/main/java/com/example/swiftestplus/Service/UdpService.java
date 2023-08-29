@@ -108,6 +108,7 @@ public class UdpService extends Thread{
                         rcvBytesCount += rcvPacket.getLength();
                         // 超时
                         if (rcvBytesRecord.size() >= 100) {
+                            Log.d("UDP", "Receive timeout!");
                             throw new SocketTimeoutException("Text exceed 1 second!");
                         }
                     }
@@ -171,14 +172,13 @@ public class UdpService extends Thread{
             Log.d("Test", "Final download bandwidth: " + downloadSpeed);
 
         } catch (SocketException e) {
-            // todo: 一大堆错误处理
-            throw new RuntimeException(e);
+            e.printStackTrace();
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 

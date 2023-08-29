@@ -597,13 +597,13 @@ public class MainActivity extends AppCompatActivity {
             testDurationView.setText("");
             testTrafficView.setText("");
             if (errorCode == 1){
-                networkTypeView.setText("网络错误，请检查您的网络连接后重试");
+                networkTypeView.setText("网络未连接或信号差，请检查您的网络连接后重试");
             }
             else if (errorCode == 2){
                 networkTypeView.setText("服务器开小差，请稍后重试");
             }
             else if (errorCode == 3) {
-                networkTypeView.setText("网络信息请求失败，请在”设置“中授权我们获取您的电话信息和位置信息。");
+                networkTypeView.setText("网络信息请求失败，请在”设置“中授权我们获取您的电话信息和位置信息");
             }
             setTestEndUI();
         });

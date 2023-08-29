@@ -157,16 +157,31 @@ public class WsService extends Thread{
                                         activity.updateBandwidthText(udpService.downloadSpeed);
                                         receiveTimeoutTask = executorService.schedule(() -> {
                                             Log.d("WebSocket", "Receive timeout");
-                                            activity.setNetworkIssueUI(2);
+                                            activity.setNetworkIssueUI(1);
                                             stopService();
-                                        }, 1, TimeUnit.SECONDS);
+                                        }, 3, TimeUnit.SECONDS);
                                     }
                                 } else {
                                     // 饱和，同速度再发
                                     JSONObject repeatMsg = new JSONObject();
                                     repeatMsg.put("msg", "repeat");
-
-                                    webSocket.send(repeatMsg.toString());
+                                    // 超时器
+                                    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+                                    ScheduledFuture<?> sendTimeoutTask = executorService.schedule(() -> {
+                                        Log.d("WebSocket", "Send timeout");
+                                        activity.setNetworkIssueUI(1);
+                                        stopService();
+                                    }, 1, TimeUnit.SECONDS);
+                                    boolean isSent = webSocket.send(repeatMsg.toString());
+                                    if (isSent) {
+                                        sendTimeoutTask.cancel(false);
+                                        Log.d("WebSocket", "Send:" + repeatMsg.toString());
+                                        receiveTimeoutTask = executorService.schedule(() -> {
+                                            Log.d("WebSocket", "Receive timeout");
+                                            activity.setNetworkIssueUI(1);
+                                            stopService();
+                                        }, 3, TimeUnit.SECONDS);
+                                    }
                                 }
                             } else {
                                 // 不饱和，加速
@@ -185,9 +200,9 @@ public class WsService extends Thread{
                                     Log.d("WebSocket", "Send:" + raiseMsg.toString());
                                     receiveTimeoutTask = executorService.schedule(() -> {
                                         Log.d("WebSocket", "Receive timeout");
-                                        activity.setNetworkIssueUI(2);
+                                        activity.setNetworkIssueUI(1);
                                         stopService();
-                                    }, 1, TimeUnit.SECONDS);
+                                    }, 3, TimeUnit.SECONDS);
                                 }
                             }
                             udpService.getSingle = false;
@@ -212,7 +227,7 @@ public class WsService extends Thread{
                                     Log.d("WebSocket", "Receive timeout");
                                     activity.setNetworkIssueUI(2);
                                     stopService();
-                                }, 1, TimeUnit.SECONDS);
+                                }, 3, TimeUnit.SECONDS);
                             }
                         }
                     } else if (responseJson.has("traffic")) {
