@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,6 +25,7 @@ import android.Manifest;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.example.swiftestplus.Service.ControllerService;
@@ -84,7 +86,14 @@ public class MainActivity extends AppCompatActivity {
 
     ObjectAnimator ballRotation;
 
-    float ballBasicWidth;
+
+    // 屏幕参数
+    int screenWidth;
+    int screenHeight;
+    float ballUpTranslation;
+    float ballInitSize;
+    float ballLargeSize;
+    float ballSmallSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,10 +114,15 @@ public class MainActivity extends AppCompatActivity {
         chartFrame = findViewById(R.id.chart_frame);
         lineChart = findViewById(R.id.line_chart);
 
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        screenWidth = displayMetrics.widthPixels;
+        screenHeight = displayMetrics.heightPixels;
+
         guidUtils = new GUIDUtils(this);
         guid = guidUtils.getGuid();
 
-        initLineChart();
+        initEverything();
 
         // 获取授权 && 展示网络信息
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)!= PackageManager.PERMISSION_GRANTED){
@@ -267,23 +281,25 @@ public class MainActivity extends AppCompatActivity {
     }
     // 2.3 移动 & 旋转 & 调整大小
     private void ballUpAndRotate() {
-        float density = getResources().getDisplayMetrics().density;
-        int[] upLabelLocation = new int[2];
-        bandwidthLabelUp.getLocationOnScreen(upLabelLocation);
-        Log.d("UI", "upLabelTop: " + upLabelLocation[1]/density);
-        float ballScaleSize = upLabelLocation[1] * 0.75f * 2f / density;
         int time;
         if (startText.getText().equals("上拉开始")) {
             time = 400;
+            ballInitSize = ballFrame.getWidth();
+            Log.d("UI", "ballInitSize:" + ballInitSize);
+            int[] ballLocation = new int[2];
+            ballFrame.getLocationOnScreen(ballLocation);
+            int[] upLabelLocation = new int[2];
+            bandwidthLabelUp.getLocationOnScreen(upLabelLocation);
+            ballLargeSize = upLabelLocation[1] * 0.8f *2f;
+            ballUpTranslation = -ballLocation[1] - ballInitSize/2f;
         } else {
             time = 800;
         }
         float startY = ballFrame.getTranslationY();
-        float endY = -ballFrame.getTop()-ballScaleSize/2;
-        ObjectAnimator ballMoveUp = ObjectAnimator.ofFloat(ballFrame, "translationY", startY, endY);
+        ObjectAnimator ballMoveUp = ObjectAnimator.ofFloat(ballFrame, "translationY", startY, ballUpTranslation);
         ObjectAnimator ballRotate = ObjectAnimator.ofFloat(ballFrame, "rotation", ballFrame.getRotation(), ballFrame.getRotation()+60f);
-        ObjectAnimator ballScaleX = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), ballScaleSize/240);
-        ObjectAnimator ballScaleY = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), ballScaleSize/240);
+        ObjectAnimator ballScaleX = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), ballLargeSize/ballInitSize);
+        ObjectAnimator ballScaleY = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), ballLargeSize/ballInitSize);
         AnimatorSet ballAnimations = new AnimatorSet();
         ballAnimations.playTogether(ballMoveUp, ballRotate, ballScaleX, ballScaleY);
         ballAnimations.setDuration(time);
@@ -481,7 +497,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 4. 更新UI
-    // 4.1 测速开始UI
+    // 4.1 所有组件初始化UI
+    public void initEverything() {
+        // 图表
+        int chartWidth = (int)(screenWidth * 0.9);
+        int chartHeight = (int)(screenHeight * 0.2);
+        LinearLayout.LayoutParams chartParams = new LinearLayout.LayoutParams(chartWidth, chartHeight);
+        chartFrame.setLayoutParams(chartParams);
+        initLineChart();
+    }
+    // 4.2 测速开始UI
     public void setTestStartUI() {
         ballFrame.setEnabled(false);
         chartValues.clear();
@@ -519,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
         }
         ballUpAndRotate();
     }
-    // 4.2 更新测速结果UI
+    // 4.3 更新测速结果UI
     public void updateBandwidthText(float bandwidth) {
         handler.post(() -> {
             String formattedBandwidth = String.format(Locale.getDefault(), "%.2f", bandwidth);
@@ -530,7 +555,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    // 4.3 更新测速中UI
+    // 4.4 更新测速中UI
     public void setTestingUI() {
         handler.post(() -> {
             //显示测速文本
@@ -549,14 +574,14 @@ public class MainActivity extends AppCompatActivity {
             ballRotation.start();
         });
     }
-    // 4.4 更新测速结束UI
+    // 4.5 更新测速结束UI
     public void setTestEndUI() {
         handler.post(() -> {
             ballRotation.cancel();
             ballAgain();
         });
     }
-    // 4.5 更新测试成功结束UI
+    // 4.6 更新测试成功结束UI
     public void setTestSuccessUI() {
         handler.post(() -> {
             uploadResult();
@@ -564,7 +589,7 @@ public class MainActivity extends AppCompatActivity {
            setTestEndUI();
         });
     }
-    // 4.6 更新网络问题UI
+    // 4.7 更新网络问题UI
     public void setNetworkIssueUI(int errorCode) {
         handler.post(() -> {
             bandwidthText.setText("0.00");
