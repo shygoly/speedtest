@@ -56,7 +56,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private final Handler handler  = new Handler(Looper.getMainLooper());
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
-    public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    public static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
     NetworkInfo network_info;
     String guid;
     GUIDUtils guidUtils;
@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     LineChart lineChart;
     public ArrayList<Entry> chartValues;
     FrameLayout chartFrame;
+    LinearLayout copyrightLayout;
 
     ObjectAnimator ballRotation;
 
@@ -113,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         testTrafficView = findViewById(R.id.test_traffic);
         chartFrame = findViewById(R.id.chart_frame);
         lineChart = findViewById(R.id.line_chart);
+        copyrightLayout = findViewById(R.id.copyright_text_layout);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -140,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 // todo: 重新获取位置授权
             }
             else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_ACCESS_FINE_LOCATION);
             }
         }
 
@@ -181,17 +183,17 @@ public class MainActivity extends AppCompatActivity {
         network_info = new NetworkInfo(this, this);
         network_info.getNetworkInfo();
         if (network_info.isConnected()){
-            if (network_info.getNetwork_type() == "WiFi"){
-                networkTypeView.setText("网络类型：WiFi");
-                networkDetailView.setText("    WiFi名称：" + network_info.getWifi_name());
+            if (network_info.getNetwork_type().contains("WiFi")){
+                networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
+                networkDetailView.setText("WiFi名称：" + network_info.getWifi_name());
             }
             else {
                 networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
-                networkDetailView.setText("    运营商：" + network_info.getCellular_carrier());
+                networkDetailView.setText("运营商：" + network_info.getCellular_carrier());
             }
         }
         else {
-            networkTypeView.setText("当前设备未连接到网络");
+            setNetworkIssueUI(1);
         }
     }
     // 1.2 授权处理
@@ -290,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
             ballFrame.getLocationOnScreen(ballLocation);
             int[] upLabelLocation = new int[2];
             bandwidthLabelUp.getLocationOnScreen(upLabelLocation);
-            ballLargeSize = upLabelLocation[1] * 0.8f *2f;
+            ballLargeSize = upLabelLocation[1] * 0.75f *2f;
             ballUpTranslation = -ballLocation[1] - ballInitSize/2f;
         } else {
             time = 800;
@@ -342,14 +344,22 @@ public class MainActivity extends AppCompatActivity {
                 testInfoView.setVisibility(View.VISIBLE);
                 // 从屏幕下方出现
                 super.onAnimationEnd(animation);
+                int[] chartLocation = new int[2];
+                chartFrame.getLocationOnScreen(chartLocation);
+                int chartBottomLocation = chartLocation[1] + chartFrame.getHeight();
+                int[] copyrightLocation = new int[2];
+                copyrightLayout.getLocationOnScreen(copyrightLocation);
+                ballSmallSize = (copyrightLocation[1] - chartBottomLocation) * 0.7f;
                 float distanceToBottom = ballFrame.getRootView().getHeight() - ballFrame.getTop();
                 ballFrame.setTranslationY(distanceToBottom);
                 float startY = ballFrame.getTranslationY();
-                float endY = startY-ballFrame.getRootView().getHeight()*0.35f;
+                float endY = startY + (chartBottomLocation + ballSmallSize / 7f * 1.5f) - ballFrame.getRootView().getHeight() - (ballInitSize - ballSmallSize) / 2f;
+                Log.d("UI", "startY:" + startY);
+                Log.d("UI", "endY:" + endY);
                 ObjectAnimator ballMoveBottom = ObjectAnimator.ofFloat(ballFrame, "translationY", startY, endY);
                 ObjectAnimator ballRotateBottom = ObjectAnimator.ofFloat(ballFrame, "Rotation", ballFrame.getRotation(), ballFrame.getRotation()+30f);
-                ObjectAnimator ballScaleXBottom = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), 0.5f);
-                ObjectAnimator ballScaleYBottom = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), 0.5f);
+                ObjectAnimator ballScaleXBottom = ObjectAnimator.ofFloat(ballFrame, "scaleX", ballFrame.getScaleX(), ballSmallSize/ballInitSize);
+                ObjectAnimator ballScaleYBottom = ObjectAnimator.ofFloat(ballFrame, "scaleY", ballFrame.getScaleY(), ballSmallSize/ballInitSize);
                 AnimatorSet ballBottom = new AnimatorSet();
                 ballBottom.playTogether(ballMoveBottom, ballRotateBottom, ballScaleXBottom, ballScaleYBottom);
                 ballBottom.setDuration(400);
@@ -418,6 +428,7 @@ public class MainActivity extends AppCompatActivity {
            bandwidthDataset.setLineWidth(3f);
            bandwidthDataset.setColor(ContextCompat.getColor(this, R.color.text_h2));
            bandwidthDataset.setDrawCircles(false);
+           bandwidthDataset.setDrawValues(false);
 
            ArrayList<ILineDataSet> bandwidthDatasets = new ArrayList<>();
            bandwidthDatasets.add(bandwidthDataset);
@@ -504,6 +515,7 @@ public class MainActivity extends AppCompatActivity {
         int chartHeight = (int)(screenHeight * 0.2);
         LinearLayout.LayoutParams chartParams = new LinearLayout.LayoutParams(chartWidth, chartHeight);
         chartFrame.setLayoutParams(chartParams);
+        networkDetailView.setMaxWidth(chartWidth);
         initLineChart();
     }
     // 4.2 测速开始UI
@@ -597,13 +609,13 @@ public class MainActivity extends AppCompatActivity {
             testDurationView.setText("");
             testTrafficView.setText("");
             if (errorCode == 1){
-                networkTypeView.setText("网络未连接或信号差，请检查您的网络连接后重试");
+                networkDetailView.setText("网络未连接或信号差，请检查您的网络连接后重试");
             }
             else if (errorCode == 2){
-                networkTypeView.setText("服务器开小差，请稍后重试");
+                networkDetailView.setText("服务器开小差，请稍后重试");
             }
             else if (errorCode == 3) {
-                networkTypeView.setText("网络信息请求失败，请在”设置“中授权我们获取您的电话信息和位置信息");
+                networkDetailView.setText("网络信息请求失败，请在”设置“中授权我们获取您的电话信息和位置信息");
             }
             setTestEndUI();
         });

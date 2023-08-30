@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.ScanResult;
+import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -18,7 +20,7 @@ public class NetworkInfo {
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
     public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     boolean connected;
-    String network_type;    // WiFi xG Unknown
+    String network_type;    // WiFi-x xG Unknown
     String cellular_carrier;
     String wifi_name;
     Context context;
@@ -39,10 +41,36 @@ public class NetworkInfo {
         if (connected) {
             switch (activeNetwork.getType()) {
                 case ConnectivityManager.TYPE_WIFI:
-                    network_type = "WiFi";
-                    Log.d("network info", "WiFi");
+//                    network_type = "WiFi";
+                    Log.d("network info", "Type: WiFi");
                     WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                     WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+                    // 判断技术标准
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        int wifiStandard = wifiInfo.getWifiStandard();
+                        switch (wifiStandard) {
+                            case ScanResult.WIFI_STANDARD_11N:
+                                network_type = "WiFi 4";
+                                break;
+                            case ScanResult.WIFI_STANDARD_11AC:
+                                network_type = "WiFi 5";
+                                break;
+                            case ScanResult.WIFI_STANDARD_11AX:
+                                network_type = "WiFi 6";
+                                break;
+                            case ScanResult.WIFI_STANDARD_11AD:
+                                network_type = "WiFi ad (WiGig)";
+                                break;
+                            case ScanResult.WIFI_STANDARD_11BE:
+                                network_type = "WiFi 7";
+                                break;
+                            default:
+                                network_type = "WiFi";
+                                break;
+                        }
+                    } else {
+                        network_type = "WiFi";
+                    }
                     wifi_name = wifiInfo.getSSID();
                     Log.d("network info", wifi_name);
                     // wifiInfo.getSSID() 可以获取到 WiFi SSID

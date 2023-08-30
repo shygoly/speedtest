@@ -13,6 +13,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.ProtocolException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.*;
 
@@ -24,7 +25,11 @@ public class ControllerService {
 
     public ControllerService(MainActivity activity) {
         this.activity = activity;
-        httpClient = new OkHttpClient();
+        httpClient = new OkHttpClient.Builder()
+                .connectTimeout(3, TimeUnit.SECONDS)
+                .readTimeout(3, TimeUnit.SECONDS)
+                .writeTimeout(3, TimeUnit.SECONDS)
+                .build();
     }
 
     public void post(String url, String json, HttpCallback callback) {
