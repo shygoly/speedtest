@@ -188,8 +188,12 @@ public class MainActivity extends AppCompatActivity {
                 networkDetailView.setText("WiFi名称：" + network_info.getWifi_name());
             }
             else {
-                networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
-                networkDetailView.setText("运营商：" + network_info.getCellular_carrier());
+                if (network_info.getNetwork_type().equals("cellular")) {
+                    networkTypeView.setText("网络类型：" + "蜂窝网络");
+                } else {
+                    networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
+                    networkDetailView.setText("运营商：" + network_info.getCellular_carrier());
+                }
             }
         }
         else {
@@ -392,6 +396,11 @@ public class MainActivity extends AppCompatActivity {
         lineChart.getLegend().setEnabled(false);
         Description description = new Description();
         description.setEnabled(false); // 禁用描述
+        if (lineChart.getData() == null || lineChart.getData().getEntryCount() == 0) {
+            lineChart.setTouchEnabled(false);
+        } else {
+            lineChart.setTouchEnabled(true);
+        }
 
         lineChart.setDescription(description);
 
@@ -429,6 +438,11 @@ public class MainActivity extends AppCompatActivity {
            bandwidthDataset.setColor(ContextCompat.getColor(this, R.color.text_h2));
            bandwidthDataset.setDrawCircles(false);
            bandwidthDataset.setDrawValues(false);
+            if (lineChart.getData() == null || lineChart.getData().getEntryCount() == 0) {
+                lineChart.setTouchEnabled(false);
+            } else {
+                lineChart.setTouchEnabled(true);
+            }
 
            ArrayList<ILineDataSet> bandwidthDatasets = new ArrayList<>();
            bandwidthDatasets.add(bandwidthDataset);

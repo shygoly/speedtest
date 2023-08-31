@@ -92,7 +92,7 @@ public class WsService extends Thread{
                         Log.d("WebSocket", "Receive timeout");
                         activity.setNetworkIssueUI(2);
                         stopService();
-                    }, 1, TimeUnit.SECONDS);
+                    }, 2, TimeUnit.SECONDS);
                 }
             }
 
