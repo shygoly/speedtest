@@ -10,9 +10,11 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -25,6 +27,7 @@ import android.Manifest;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -58,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
     public static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
     NetworkInfo network_info;
-    String guid;
-    GUIDUtils guidUtils;
+    String androidID;
+//    String guid;
+//    GUIDUtils guidUtils;
     ControllerService controllerService;
     String BPS;
     String testID;
@@ -84,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
     public ArrayList<Entry> chartValues;
     FrameLayout chartFrame;
     LinearLayout copyrightLayout;
+    ProgressBar progressBar;
 
     ObjectAnimator ballRotation;
 
@@ -115,14 +120,16 @@ public class MainActivity extends AppCompatActivity {
         chartFrame = findViewById(R.id.chart_frame);
         lineChart = findViewById(R.id.line_chart);
         copyrightLayout = findViewById(R.id.copyright_text_layout);
+        progressBar = findViewById(R.id.progress_bar);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         screenWidth = displayMetrics.widthPixels;
         screenHeight = displayMetrics.heightPixels;
 
-        guidUtils = new GUIDUtils(this);
-        guid = guidUtils.getGuid();
+        androidID = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+//        guidUtils = new GUIDUtils(this);
+//        guid = guidUtils.getGuid();
 
         initEverything();
 
@@ -188,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
                 networkDetailView.setText("WiFi名称：" + network_info.getWifi_name());
             }
             else {
-                if (network_info.getNetwork_type().equals("cellular")) {
-                    networkTypeView.setText("网络类型：" + "蜂窝网络");
+                if (network_info.getNetwork_type().equals("Mixed")) {
+                    networkTypeView.setText("网络类型：" + "混合网络");
                 } else {
                     networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
                     networkDetailView.setText("运营商：" + network_info.getCellular_carrier());
@@ -452,6 +459,10 @@ public class MainActivity extends AppCompatActivity {
             lineChart.animateX(400);
         });
     }
+    // todo: 2.4 进度条
+    private void initProgressBar() {
+
+    }
 
     // 3. 测速
     // 3.1 创建ws线程
@@ -467,7 +478,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONObject postJson = new JSONObject();
             postJson.put("network_type", network_info.getNetwork_type());
-            postJson.put("GUID", guid);
+            postJson.put("GUID", androidID);
             postJson.put("client", "Android");  //todo: 获取其他操作系统类型
             controllerService.post(postUrl, postJson.toString(), new HttpCallback() {
                 @Override
@@ -482,7 +493,7 @@ public class MainActivity extends AppCompatActivity {
                         wsService.stopService();
                         wsService.join();
                     }
-                    createWsService(BPS, guid, testID);
+                    createWsService(BPS, androidID, testID);
                     wsService.start();
                 }
                 @Override
@@ -501,8 +512,11 @@ public class MainActivity extends AppCompatActivity {
         String postUrl = "http://" + controllerService.getControllerIp() + ":" + controllerService.getControllerPort() + "/speedtest/record";
         try {
             JSONObject postJson = new JSONObject();
+            // todo: 品牌信息需要用户同意
+            Log.d("Result", Build.BRAND);
+            postJson.put("brand", Build.BRAND);
             postJson.put("network_type", network_info.getNetwork_type());
-            postJson.put("GUID", guid);
+            postJson.put("GUID", androidID);
             postJson.put("download", bandwidth);
             Log.d("Post", postJson.toString());
             controllerService.post(postUrl, postJson.toString(), new HttpCallback() {

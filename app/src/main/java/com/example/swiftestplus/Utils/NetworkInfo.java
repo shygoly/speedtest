@@ -107,7 +107,7 @@ public class NetworkInfo {
                             network_type = "5G";
                             break;
                         default:
-                            network_type = "cellular";
+                            network_type = "Mixed";
                     }
                     Log.d("network info", network_type);
                     break;
