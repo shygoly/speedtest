@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.ScanResult;
@@ -14,6 +16,8 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 
 import com.example.swiftestplus.MainActivity;
+
+import java.util.List;
 
 public class NetworkInfo {
     private MainActivity activity;
@@ -72,8 +76,10 @@ public class NetworkInfo {
                         network_type = "WiFi";
                     }
                     wifi_name = wifiInfo.getSSID();
+                    if (wifi_name.equals("<unknown ssid>")) {
+                        // todo: unknown ssid 的处理办法
+                    }
                     Log.d("network info", wifi_name);
-                    // wifiInfo.getSSID() 可以获取到 WiFi SSID
                     break;
                 case ConnectivityManager.TYPE_MOBILE:
                     TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);

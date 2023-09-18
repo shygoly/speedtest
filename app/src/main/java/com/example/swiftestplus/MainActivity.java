@@ -1,5 +1,6 @@
 package com.example.swiftestplus;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -19,9 +20,11 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.Manifest;
 import android.widget.FrameLayout;
@@ -89,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
     FrameLayout chartFrame;
     LinearLayout copyrightLayout;
     ProgressBar progressBar;
+    LinearLayout progressLayout;
+    TextView timeCounter;
 
     ObjectAnimator ballRotation;
 
@@ -100,6 +105,8 @@ public class MainActivity extends AppCompatActivity {
     float ballInitSize;
     float ballLargeSize;
     float ballSmallSize;
+    private int progressStatus;
+    private int timeCur;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
         lineChart = findViewById(R.id.line_chart);
         copyrightLayout = findViewById(R.id.copyright_text_layout);
         progressBar = findViewById(R.id.progress_bar);
+        progressLayout = findViewById(R.id.progress_bar_layout);
+        timeCounter = findViewById(R.id.time_counter);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -222,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
     }
     // 1.3 测速信息展示
     public void showTestInfo() {
-        testDuration = chartValues.get(chartValues.size()-1).getX();
+        testDuration = (float)timeCur/1000f;
         testDurationView.setText("测试时长：" + String.format("%.1f", testDuration) + "秒");
         testTrafficView.setText("    耗费流量：" + String.format("%.1f", testTraffic) + "MB");
     }
@@ -322,6 +331,8 @@ public class MainActivity extends AppCompatActivity {
                 super.onAnimationEnd(animation);
                 // 动画结束后测试开始
                 testBandwidth();
+                // 进度条
+                handler.post(progressGo);
             }
         });
         ballAnimations.start();
@@ -461,8 +472,44 @@ public class MainActivity extends AppCompatActivity {
     }
     // todo: 2.4 进度条
     private void initProgressBar() {
-
+        progressStatus = 0;
+        progressBar.setProgress(progressStatus);
+        int progressBarWidth = (int) (screenWidth * 0.9 * 0.8);
+        ViewGroup.LayoutParams params = progressBar.getLayoutParams();
+        params.width = progressBarWidth;
+        progressBar.setLayoutParams(params);
     }
+    private Runnable progressGo = new Runnable() {
+        @Override
+        public void run() {
+            progressStatus += 10;
+            progressBar.setProgress(progressStatus);
+            if (progressStatus - timeCur >= 100) {
+                timeCur += 100;
+                timeCounter.setText(String.format("%.1f", (double)timeCur / 1000.0) + "秒");
+            }
+            if (progressStatus <= 3000) {
+                handler.postDelayed(this, 10);
+            }
+        }
+    };
+    public void progressToMax (int duration) {
+        handler.removeCallbacks(progressGo);
+        handler.post(() -> {
+            int progress = progressBar.getProgress();
+            ValueAnimator animator = ValueAnimator.ofInt(progress, progressBar.getMax());
+            animator.setDuration(duration);
+            animator.setInterpolator(new LinearInterpolator());
+            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                    progressBar.setProgress((int) animation.getAnimatedValue());
+                }
+            });
+            animator.start();
+        });
+    }
+
 
     // 3. 测速
     // 3.1 创建ws线程
@@ -545,9 +592,13 @@ public class MainActivity extends AppCompatActivity {
         chartFrame.setLayoutParams(chartParams);
         networkDetailView.setMaxWidth(chartWidth);
         initLineChart();
+        initProgressBar();
     }
     // 4.2 测速开始UI
     public void setTestStartUI() {
+        progressStatus = 0;
+        timeCur = 0;
+        progressBar.setProgress(progressStatus);
         ballFrame.setEnabled(false);
         chartValues.clear();
         chartValues.add(new Entry(0, 0));
@@ -598,7 +649,7 @@ public class MainActivity extends AppCompatActivity {
     // 4.4 更新测速中UI
     public void setTestingUI() {
         handler.post(() -> {
-            //显示测速文本
+            // 显示测速文本
             bandwidthLabelUp.setText("测速中");
             bandwidthText.startAnimation(fadeIn(400));
             bandwidthText.setVisibility(View.VISIBLE);
@@ -608,8 +659,9 @@ public class MainActivity extends AppCompatActivity {
             bandwidthLabelDown.setVisibility(View.VISIBLE);
             chartFrame.startAnimation(fadeIn(400));
             chartFrame.setVisibility(View.VISIBLE);
+            progressLayout.setVisibility(View.VISIBLE);
 
-            //转球
+            // 转球
             ballRotate();
             ballRotation.start();
         });
@@ -619,6 +671,9 @@ public class MainActivity extends AppCompatActivity {
         handler.post(() -> {
             ballRotation.cancel();
             ballAgain();
+            handler.removeCallbacks(progressGo);
+            progressLayout.startAnimation(fadeOut(400));
+            progressLayout.setVisibility(View.GONE);
         });
     }
     // 4.6 更新测试成功结束UI

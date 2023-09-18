@@ -138,7 +138,9 @@ public class WsService extends Thread{
                                 if (udpService.isTestEnd()) {
                                     // 测试结束
                                     endTime = System.currentTimeMillis();
-                                    sleep(400);
+                                    // todo: 进度条拉满
+                                    activity.progressToMax(200);
+                                    sleep(200);
                                     JSONObject endMsg = new JSONObject();
                                     endMsg.put("msg", "finish");
                                     endMsg.put("download", udpService.downloadSpeed);
@@ -207,6 +209,9 @@ public class WsService extends Thread{
                             }
                             udpService.getSingle = false;
                         } else if (responseJson.get("msg").equals("exceed")) {
+                            udpService.downloadSpeed = 500;
+                            activity.progressToMax(200);
+                            sleep(200);
                             // todo: 达到上限，测速结束
                             JSONObject endMsg = new JSONObject();
                             endMsg.put("msg", "finish");
@@ -222,7 +227,7 @@ public class WsService extends Thread{
                             if (isSent) {
                                 sendTimeoutTask.cancel(false);
                                 Log.d("WebSocket", "Send:" + endMsg.toString());
-                                activity.updateBandwidthText(500);
+                                activity.updateBandwidthText(udpService.downloadSpeed);
                                 receiveTimeoutTask = executorService.schedule(() -> {
                                     Log.d("WebSocket", "Receive timeout");
                                     activity.setNetworkIssueUI(2);
