@@ -85,6 +85,7 @@ public class NetworkInfo {
                     TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
                     cellular_carrier = telephonyManager.getNetworkOperatorName();
                     int networkType = telephonyManager.getNetworkType();
+//                    int networkType = activeNetwork.getSubtype();
                     Log.d("network info", "Cellular code: " + String.valueOf(networkType));
                     switch (networkType) {
                         case TelephonyManager.NETWORK_TYPE_GPRS:

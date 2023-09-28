@@ -92,7 +92,7 @@ public class WsService extends Thread{
                         Log.d("WebSocket", "Receive timeout");
                         activity.setNetworkIssueUI(2);
                         stopService();
-                    }, 2, TimeUnit.SECONDS);
+                    }, 3, TimeUnit.SECONDS);
                 }
             }
 
@@ -239,7 +239,7 @@ public class WsService extends Thread{
                         activity.bandwidth = udpService.downloadSpeed;
                         activity.testTraffic = responseJson.getDouble("traffic") / 1024 / 1024;
                         activity.setTestSuccessUI();
-                        stopService();
+//                        stopService();
                     }
                 } catch (JSONException e) {
                     // todo: 错误处理

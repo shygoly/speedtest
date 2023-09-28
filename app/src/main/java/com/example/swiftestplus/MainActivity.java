@@ -470,7 +470,7 @@ public class MainActivity extends AppCompatActivity {
             lineChart.animateX(400);
         });
     }
-    // todo: 2.4 进度条
+    // 2.4 进度条
     private void initProgressBar() {
         progressStatus = 0;
         progressBar.setProgress(progressStatus);
@@ -560,6 +560,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONObject postJson = new JSONObject();
             // todo: 品牌信息需要用户同意
+            // todo: 城市信息
             Log.d("Result", Build.BRAND);
             postJson.put("brand", Build.BRAND);
             postJson.put("network_type", network_info.getNetwork_type());
@@ -570,10 +571,12 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess(JSONObject json) throws JSONException, InterruptedException {
                     Log.d("Controller", json.toString());
+                    wsService.stopService();
                 }
                 @Override
                 public void onFailure(Exception e) {
                     Log.d("Controller", "上传测速结果失败");
+                    wsService.stopService();
                 }
             });
         } catch (JSONException e) {
