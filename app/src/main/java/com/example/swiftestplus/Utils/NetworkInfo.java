@@ -21,7 +21,6 @@ import java.util.List;
 
 public class NetworkInfo {
     private MainActivity activity;
-    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
     public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     boolean connected;
     String network_type;    // WiFi-x xG Unknown
@@ -30,10 +29,6 @@ public class NetworkInfo {
     Context context;
 
     public void getNetworkInfo() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
-            return;
-        }
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
             return;
@@ -84,8 +79,8 @@ public class NetworkInfo {
                 case ConnectivityManager.TYPE_MOBILE:
                     TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
                     cellular_carrier = telephonyManager.getNetworkOperatorName();
-                    int networkType = telephonyManager.getNetworkType();
-//                    int networkType = activeNetwork.getSubtype();
+//                    int networkType = telephonyManager.getNetworkType();
+                    int networkType = activeNetwork.getSubtype();
                     Log.d("network info", "Cellular code: " + String.valueOf(networkType));
                     switch (networkType) {
                         case TelephonyManager.NETWORK_TYPE_GPRS:

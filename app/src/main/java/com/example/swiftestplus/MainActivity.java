@@ -61,7 +61,6 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final Handler handler  = new Handler(Looper.getMainLooper());
-    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
     public static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
     NetworkInfo network_info;
     String androidID;
@@ -142,16 +141,6 @@ public class MainActivity extends AppCompatActivity {
 
         initEverything();
 
-        // 获取授权 && 展示网络信息
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)!= PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_PHONE_STATE)) {
-                // todo: 重新获取网络授权
-            }
-            else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
-            }
-        }
-
         // 获取位置信息
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -217,18 +206,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     // 1.2 授权处理
-    public void onRequestPermissionResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getAndShowNetworkInfo();
-                }
-                else {
-                    // todo: 用户拒绝权限
-                }
-            }
-        }
-    }
     // 1.3 测速信息展示
     public void showTestInfo() {
         testDuration = (float)timeCur/1000f;
