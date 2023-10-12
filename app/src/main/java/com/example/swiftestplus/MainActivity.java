@@ -1,6 +1,7 @@
 package com.example.swiftestplus;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -18,6 +19,7 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,12 +29,14 @@ import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.Manifest;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.swiftestplus.Service.ControllerService;
 import com.example.swiftestplus.Service.HttpCallback;
@@ -93,6 +97,8 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar progressBar;
     LinearLayout progressLayout;
     TextView timeCounter;
+    ImageView feedbackIcon;
+    EditText feedbackInput;
 
     ObjectAnimator ballRotation;
 
@@ -129,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
         progressLayout = findViewById(R.id.progress_bar_layout);
         timeCounter = findViewById(R.id.time_counter);
+        feedbackIcon = findViewById(R.id.feedback_icon);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -136,11 +143,13 @@ public class MainActivity extends AppCompatActivity {
         screenHeight = displayMetrics.heightPixels;
 
         androidID = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        controllerService = new ControllerService(this);
 //        guidUtils = new GUIDUtils(this);
 //        guid = guidUtils.getGuid();
 
         initEverything();
 
+        // todo: 可能拿不到了
         // 获取位置信息
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -177,6 +186,14 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 return true;
+            }
+        });
+
+        // 设置反馈图标
+        feedbackIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showFeedbackDialog();
             }
         });
 
@@ -341,6 +358,8 @@ public class MainActivity extends AppCompatActivity {
                 moveTexts();
                 testInfoView.startAnimation(fadeIn(400));
                 testInfoView.setVisibility(View.VISIBLE);
+                feedbackIcon.startAnimation(fadeIn(400));
+                feedbackIcon.setVisibility(View.VISIBLE);
                 // 从屏幕下方出现
                 super.onAnimationEnd(animation);
                 int[] chartLocation = new int[2];
@@ -367,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onAnimationEnd(Animator animation) {
                         super.onAnimationEnd(animation);
                         ballFrame.setEnabled(true);
+                        feedbackIcon.setEnabled(true);
                     }
                 });
                 ballBottom.start();
@@ -486,6 +506,64 @@ public class MainActivity extends AppCompatActivity {
             animator.start();
         });
     }
+    // 2.5 用户反馈
+    private void showFeedbackDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_feedback, null);
+        builder.setView(dialogView);
+
+        final EditText feedbackInput = dialogView.findViewById(R.id.feedback_input);
+        Button submitButton = dialogView.findViewById(R.id.submit_feedback);
+        TextView feedbackAlert = dialogView.findViewById(R.id.feedback_alert);
+
+        AlertDialog dialog = builder.create();
+
+        submitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String feedback = feedbackInput.getText().toString();
+
+                if (!feedback.isEmpty()) {
+                    // 发送到服务器
+                    String postUrl = "http://" + controllerService.getControllerIp() + ":" + controllerService.getControllerPort() + "/feedback/new";
+                    try {
+                        JSONObject postJson = new JSONObject();
+                        postJson.put("GUID", androidID);
+                        postJson.put("feedback", feedback);
+                        Log.d("Post", postJson.toString());
+                        controllerService.post(postUrl, postJson.toString(), new HttpCallback() {
+                            @Override
+                            public void onSuccess(JSONObject json) throws JSONException, InterruptedException {
+                                Log.d("Controller", json.toString());
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, "提交成功，感谢您的反馈！", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                feedbackAlert.setText("网络错误，请重试");
+                                feedbackAlert.setVisibility(View.VISIBLE);
+                            }
+                        });
+                    } catch (JSONException e) {
+                        // todo:错误处理
+                        throw new RuntimeException(e);
+                    }
+                    feedbackAlert.setVisibility(View.GONE);
+                    dialog.dismiss();
+                } else {
+                    feedbackAlert.setText("提交内容不能为空");
+                    feedbackAlert.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        dialog.show();
+    }
 
 
     // 3. 测速
@@ -497,7 +575,6 @@ public class MainActivity extends AppCompatActivity {
     public void testBandwidth() {
         setTestingUI();
         getAndShowNetworkInfo();
-        controllerService = new ControllerService(this);
         String postUrl = "http://" + controllerService.getControllerIp() + ":" + controllerService.getControllerPort() + "/speedtest/new";
         try {
             JSONObject postJson = new JSONObject();
@@ -580,10 +657,13 @@ public class MainActivity extends AppCompatActivity {
         timeCur = 0;
         progressBar.setProgress(progressStatus);
         ballFrame.setEnabled(false);
+        feedbackIcon.setEnabled(false);
         chartValues.clear();
         chartValues.add(new Entry(0, 0));
         startText.startAnimation(fadeOut(400));
         startText.setVisibility(View.INVISIBLE);
+        feedbackIcon.setAnimation(fadeOut(400));
+        feedbackIcon.setVisibility(View.INVISIBLE);
         if (bandwidthText.getVisibility() == View.VISIBLE) {
             AlphaAnimation textFadeOut = fadeOut(400);
             textFadeOut.setAnimationListener(new Animation.AnimationListener() {
@@ -611,7 +691,6 @@ public class MainActivity extends AppCompatActivity {
             testInfoView.setVisibility(View.INVISIBLE);
             chartFrame.startAnimation(fadeOut(400));
             chartFrame.setVisibility(View.INVISIBLE);
-
         }
         ballUpAndRotate();
     }

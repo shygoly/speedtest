@@ -4,9 +4,12 @@
     <color name="text_h2">#FFC3C3C3</color>
     <color name="text_unimportant">#FF797979</color>
     <color name="bg_dark">#FF1A1A1A</color>
+    <color name="bg_light">#FF363636</color>
+    <color name="brightest">#FF7DE2D1</color>
+    <color name="bright">#FF339989</color>
     <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <color name="teal_200">#FF7DE2D1</color>
+    <color name="teal_700">#FF339989</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>
