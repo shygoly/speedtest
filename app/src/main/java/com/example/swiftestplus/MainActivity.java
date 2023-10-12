@@ -11,6 +11,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -117,6 +119,33 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //@xvlincaigou 2023/10/11 到此一游
+        //这一段是为了在用户第一次下载该软件时弹出对话框，让用户同意一些条款，如果不同意就强行退出
+        //TODO:“芝士内容”应该换成一些软件的说明，但是这个暂时没有，等后面再加。
+        SharedPreferences sharedPreferences = getSharedPreferences("FirstRun",0);
+        Boolean first_run = sharedPreferences.getBoolean("First",true);
+
+        if (first_run){
+            AlertDialog alertDialog1 = new AlertDialog.Builder(this)
+                    .setTitle("欢迎使用秒测网速")
+                    .setMessage("芝士内容")
+                    .setIcon(R.mipmap.ic_launcher)
+                    .setPositiveButton("同意", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            sharedPreferences.edit().putBoolean("First",false).commit();
+                        }
+                    })
+                    .setNegativeButton("暂时不同意", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            System.exit(0);
+                        }
+                    })
+                    .create();
+            alertDialog1.show();
+        }
 
         ball = findViewById(R.id.ball);
         ballFrame = findViewById(R.id.ball_frame);
