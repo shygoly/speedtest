@@ -12,13 +12,19 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,6 +43,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -99,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar progressBar;
     LinearLayout progressLayout;
     TextView timeCounter;
+    TextView explaination;//xvlincaigou
     ImageView feedbackIcon;
     EditText feedbackInput;
 
@@ -120,31 +128,63 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //@xvlincaigou 2023/10/11 到此一游
-        //这一段是为了在用户第一次下载该软件时弹出对话框，让用户同意一些条款，如果不同意就强行退出
-        //TODO:“芝士内容”应该换成一些软件的说明，但是这个暂时没有，等后面再加。
+        //xvlincaigou
+        //这一段是为了在用户第一次下载该软件时弹出对话框，让用户同意一些条款，无论是否同意都会进入界面
         SharedPreferences sharedPreferences = getSharedPreferences("FirstRun",0);
         Boolean first_run = sharedPreferences.getBoolean("First",true);
 
         if (first_run){
-            AlertDialog alertDialog1 = new AlertDialog.Builder(this)
-                    .setTitle("欢迎使用秒测网速")
-                    .setMessage("芝士内容")
-                    .setIcon(R.mipmap.ic_launcher)
-                    .setPositiveButton("同意", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            sharedPreferences.edit().putBoolean("First",false).commit();
-                        }
-                    })
-                    .setNegativeButton("暂时不同意", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            System.exit(0);
-                        }
-                    })
-                    .create();
-            alertDialog1.show();
+            LayoutInflater inflater = getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.dialog_startpage, null);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setView(dialogView);
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+            Button noButton = dialogView.findViewById(R.id.choose_no);
+            noButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    sharedPreferences.edit().putBoolean("First",false).commit();
+                    dialog.dismiss();
+                }
+            });
+            Button yesButton = dialogView.findViewById(R.id.choose_yes);
+            yesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+                public void onClick(View view) {
+                    sharedPreferences.edit().putBoolean("First",false).commit();
+                    dialog.dismiss();
+                }
+            });
+
+            explaination=dialogView.findViewById(R.id.explanation);
+            SpannableString spanString = new SpannableString("欢迎您使用秒测网速，根据《常见类型移动互联网应用程序必要个人信息范围规定》，" +
+                    "本 App 属于实用工具类，主要功能为网速测试服务，此功能无须个人信息，即可使用基本测速服务。\n" +
+                    "请您在使用我们提供的网速测试服务前仔细阅读《用户协议》和《隐私政策》。" +
+                    "请您知悉，您同意隐私政策仅代表您已了解应用提供的功能，以及功能运行所需的必要个人信息，" +
+                    "并不代表您已同意我们可以收集非必要个人信息，非必要个人信息会根据您使用过程中的授权情况单独征求您的同意。");
+            spanString.setSpan(new ClickableSpan() {
+                               @Override
+                               public void onClick(View view) {
+                                   Uri uri = Uri.parse("http://swiftest.thucloud.com:8080/user_agreement.html");
+                                   Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                                   startActivity(intent);
+                               }
+                           }
+                , 107, 113, Spanned.SPAN_MARK_MARK);
+            spanString.setSpan(new ClickableSpan() {
+                               @Override
+                               public void onClick(View view) {
+                                   Uri uri = Uri.parse("http://swiftest.thucloud.com:8080/privacy_policy.html");
+                                   Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                                   startActivity(intent);
+                               }
+                           }
+                , 114, 120, Spanned.SPAN_MARK_MARK);
+            explaination.setText(spanString);
+            explaination.setMovementMethod(LinkMovementMethod.getInstance());
+
         }
 
         ball = findViewById(R.id.ball);
