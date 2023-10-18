@@ -315,10 +315,22 @@ public class MainActivity extends AppCompatActivity {
         fadeIn.setDuration(ms);
         return fadeIn;
     }
+    private void fadeInVisible(View view, int ms) {
+        view.startAnimation(fadeIn(ms));
+        view.setVisibility(View.VISIBLE);
+    }
     private AlphaAnimation fadeOut(int ms) {
         AlphaAnimation fadeOut = new AlphaAnimation(1.0f, 0.0f);
         fadeOut.setDuration(ms);
         return fadeOut;
+    }
+    private void fadeOutInvisible(View view, int ms) {
+        view.startAnimation(fadeOut(ms));
+        view.setVisibility(View.INVISIBLE);
+    }
+    private void fadeOutGone(View view, int ms) {
+        view.startAnimation(fadeOut(ms));
+        view.setVisibility(View.GONE);
     }
     private AlphaAnimation fadeOutAndIn(final TextView view, int ms, String text) {
         AlphaAnimation fadeOutAndIn = new AlphaAnimation(1.0f, 0.0f);
@@ -427,10 +439,8 @@ public class MainActivity extends AppCompatActivity {
                 bandwidthLabelUp.startAnimation(fadeOutAndIn(bandwidthLabelUp, 400, "下行带宽"));
                 bandwidthLabelUp.setVisibility(View.INVISIBLE);
                 moveTexts();
-                testInfoView.startAnimation(fadeIn(400));
-                testInfoView.setVisibility(View.VISIBLE);
-                feedbackIcon.startAnimation(fadeIn(400));
-                feedbackIcon.setVisibility(View.VISIBLE);
+                fadeInVisible(testInfoView, 400);
+                fadeInVisible(feedbackIcon, 400);
                 // 从屏幕下方出现
                 super.onAnimationEnd(animation);
                 int[] chartLocation = new int[2];
@@ -468,8 +478,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void startTextAgain() {
         startText.setText("上拉重测");
-        startText.startAnimation(fadeIn(400));
-        startText.setVisibility(View.VISIBLE);
+        fadeInVisible(startText, 400);
         float ballRotation = ballFrame.getRotation();
         startText.setRotation(-ballRotation-30);
     }
@@ -731,37 +740,30 @@ public class MainActivity extends AppCompatActivity {
         feedbackIcon.setEnabled(false);
         chartValues.clear();
         chartValues.add(new Entry(0, 0));
-        startText.startAnimation(fadeOut(400));
-        startText.setVisibility(View.INVISIBLE);
-        feedbackIcon.setAnimation(fadeOut(400));
-        feedbackIcon.setVisibility(View.INVISIBLE);
+        fadeOutInvisible(startText, 400);
+        fadeOutInvisible(feedbackIcon, 400);
+        // 如果目前是测速结果页，需要把东西都清理干净
         if (bandwidthText.getVisibility() == View.VISIBLE) {
             AlphaAnimation textFadeOut = fadeOut(400);
             textFadeOut.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) { }
-
                 @Override
                 public void onAnimationEnd(Animation animation) {
+                    //重置测速信息和文本位置
                     resetTestInfo();
                     moveTextsBack();
                 }
                 @Override
-                public void onAnimationRepeat(Animation animation) {
-
-                }
+                public void onAnimationRepeat(Animation animation) { }
             });
 
-            bandwidthLabelUp.startAnimation(fadeOut(400));
+            bandwidthLabelUp.startAnimation(textFadeOut);
             bandwidthLabelUp.setVisibility(View.INVISIBLE);
-            bandwidthLabelDown.startAnimation(textFadeOut);
-            bandwidthLabelDown.setVisibility(View.INVISIBLE);
-            bandwidthText.startAnimation(fadeOut(400));
-            bandwidthText.setVisibility(View.INVISIBLE);
-            testInfoView.startAnimation(fadeOut(400));
-            testInfoView.setVisibility(View.INVISIBLE);
-            chartFrame.startAnimation(fadeOut(400));
-            chartFrame.setVisibility(View.INVISIBLE);
+            fadeOutInvisible(bandwidthLabelDown, 400);
+            fadeOutInvisible(bandwidthText, 400);
+            fadeOutInvisible(testInfoView, 400);
+            fadeOutInvisible(chartFrame, 400);
         }
         ballUpAndRotate();
     }
@@ -779,16 +781,12 @@ public class MainActivity extends AppCompatActivity {
     // 4.4 更新测速中UI
     public void setTestingUI() {
         handler.post(() -> {
-            // 显示测速文本
+            // 显示测速文本、图表&进度条
             bandwidthLabelUp.setText("测速中");
-            bandwidthText.startAnimation(fadeIn(400));
-            bandwidthText.setVisibility(View.VISIBLE);
-            bandwidthLabelUp.startAnimation(fadeIn(400));
-            bandwidthLabelUp.setVisibility(View.VISIBLE);
-            bandwidthLabelDown.startAnimation(fadeIn(400));
-            bandwidthLabelDown.setVisibility(View.VISIBLE);
-            chartFrame.startAnimation(fadeIn(400));
-            chartFrame.setVisibility(View.VISIBLE);
+            fadeInVisible(bandwidthText, 400);
+            fadeInVisible(bandwidthLabelUp, 400);
+            fadeInVisible(bandwidthLabelDown, 400);
+            fadeInVisible(chartFrame, 400);
             progressLayout.setVisibility(View.VISIBLE);
 
             // 转球
@@ -802,8 +800,7 @@ public class MainActivity extends AppCompatActivity {
             ballRotation.cancel();
             ballAgain();
             handler.removeCallbacks(progressGo);
-            progressLayout.startAnimation(fadeOut(400));
-            progressLayout.setVisibility(View.GONE);
+            fadeOutGone(progressLayout, 400);
         });
     }
     // 4.6 更新测试成功结束UI
