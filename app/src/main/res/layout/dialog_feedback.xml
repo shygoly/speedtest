@@ -32,7 +32,18 @@
         android:layout_height="wrap_content"
         android:background="@drawable/button_normal"
         android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:layout_gravity="center"
         android:text="提交"/>
+
+    <TextView
+        android:id="@+id/feedback_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/text_unimportant"
+        android:layout_marginTop="2dp"
+        android:layout_gravity="center"
+        android:textSize="10dp"
+        android:text="您可以在秒测网速官网查看您的反馈及我们的回复" />
 
 </LinearLayout>

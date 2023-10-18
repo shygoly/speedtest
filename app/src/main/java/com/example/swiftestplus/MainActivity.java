@@ -74,7 +74,7 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final Handler handler  = new Handler(Looper.getMainLooper());
-    public static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
+//    public static final int MY_PERMISSIONS_ACCESS_FINE_LOCATION = 1;
     NetworkInfo network_info;
     String androidID;
 //    String guid;
@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setView(dialogView);
             AlertDialog dialog = builder.create();
+            dialog.setCancelable(false);
             dialog.show();
 
             Button noButton = dialogView.findViewById(R.id.choose_no);
@@ -220,14 +221,14 @@ public class MainActivity extends AppCompatActivity {
 
         // todo: 可能拿不到了
         // 获取位置信息
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                // todo: 重新获取位置授权
-            }
-            else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_ACCESS_FINE_LOCATION);
-            }
-        }
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+//                // todo: 重新获取位置授权
+//            }
+//            else {
+//                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_ACCESS_FINE_LOCATION);
+//            }
+//        }
 
         // 设置上滑事件：开始测速
         ballFrame.setOnTouchListener(new View.OnTouchListener() {
@@ -276,7 +277,8 @@ public class MainActivity extends AppCompatActivity {
         if (network_info.isConnected()){
             if (network_info.getNetwork_type().contains("WiFi")){
                 networkTypeView.setText("网络类型：" + network_info.getNetwork_type());
-                networkDetailView.setText("WiFi名称：" + network_info.getWifi_name());
+                networkDetailView.setVisibility(View.GONE);
+//                networkDetailView.setText("WiFi名称：" + network_info.getWifi_name());
             }
             else {
                 if (network_info.getNetwork_type().equals("Mixed")) {

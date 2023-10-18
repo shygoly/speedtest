@@ -37,6 +37,16 @@
                     android:id="@+id/copyright_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="秒测网速官网：http://swiftest.thucloud.com:8080/"
+                    android:textColor="@color/text_unimportant"
+                    android:textSize="12dp"
+                    android:layout_marginBottom="2dp"
+                    android:layout_gravity="bottom|center_horizontal"/>
+
+                <TextView
+                    android:id="@+id/copyright_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="技术支持：清华大学软件学院移动云计算与未来网络实验室"
                     android:textColor="@color/text_unimportant"
                     android:textSize="12dp"

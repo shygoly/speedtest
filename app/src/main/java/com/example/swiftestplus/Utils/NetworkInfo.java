@@ -21,7 +21,7 @@ import java.util.List;
 
 public class NetworkInfo {
     private MainActivity activity;
-    public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+//    public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     boolean connected;
     String network_type;    // WiFi-x xG Unknown
     String cellular_carrier;
@@ -29,10 +29,10 @@ public class NetworkInfo {
     Context context;
 
     public void getNetworkInfo() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-            return;
-        }
+//        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+//            return;
+//        }
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         android.net.NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
         connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
@@ -70,11 +70,11 @@ public class NetworkInfo {
                     } else {
                         network_type = "WiFi";
                     }
-                    wifi_name = wifiInfo.getSSID();
-                    if (wifi_name.equals("<unknown ssid>")) {
-                        // todo: unknown ssid 的处理办法
-                    }
-                    Log.d("network info", wifi_name);
+//                    wifi_name = wifiInfo.getSSID();
+//                    if (wifi_name.equals("<unknown ssid>")) {
+//                        // todo: unknown ssid 的处理办法
+//                    }
+//                    Log.d("network info", wifi_name);
                     break;
                 case ConnectivityManager.TYPE_MOBILE:
                     TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
