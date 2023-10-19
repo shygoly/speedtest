@@ -595,6 +595,7 @@ public class MainActivity extends AppCompatActivity {
 
         final EditText feedbackInput = dialogView.findViewById(R.id.feedback_input);
         Button submitButton = dialogView.findViewById(R.id.submit_feedback);
+        Button cancelButton = dialogView.findViewById(R.id.cancel_feedback);
         TextView feedbackAlert = dialogView.findViewById(R.id.feedback_alert);
 
         AlertDialog dialog = builder.create();
@@ -639,6 +640,13 @@ public class MainActivity extends AppCompatActivity {
                     feedbackAlert.setText("提交内容不能为空");
                     feedbackAlert.setVisibility(View.VISIBLE);
                 }
+            }
+        });
+
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
             }
         });
 

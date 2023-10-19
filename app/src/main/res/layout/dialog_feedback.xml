@@ -3,7 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:paddingTop="16dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="8dp"
     android:background="@color/bg_light">
 
     <EditText
@@ -14,6 +17,7 @@
         android:layout_marginBottom="6dp"
         android:background="@drawable/edit_text"
         android:lines="4"
+        android:textSize="16dp"
         android:textColor="@color/text_h2"
         android:textColorHint="@color/text_unimportant"
         android:hint="您对秒测网速服务的反馈"/>
@@ -26,15 +30,34 @@
         android:text="错误信息"
         android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/submit_feedback"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/button_normal"
+        android:orientation="horizontal"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
-        android:layout_gravity="center"
-        android:text="提交"/>
+        android:background="@color/bg_light">
+
+        <Button
+            android:id="@+id/cancel_feedback"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="40dp"
+            android:background="@drawable/button_unimportant"
+            android:textColor="@color/text_h2"
+            android:text="取消" />
+
+        <Button
+            android:id="@+id/submit_feedback"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/button_normal"
+            android:textColor="@color/text_h1"
+            android:text="提交" />
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/feedback_tip"
