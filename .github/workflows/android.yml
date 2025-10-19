@@ -1,0 +1,24 @@
+name: Android CI
+
+on:
+  push:
+    paths:
+      - 'core/**'
+      - 'android-app/**'
+      - 'android-sdk/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle build (requires wrapper)
+        run: |
+          ./gradlew :core:assemble :android-app:assembleDebug :android-sdk:sdk:assembleRelease
