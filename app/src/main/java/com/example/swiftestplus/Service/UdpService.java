@@ -20,6 +20,7 @@ public class UdpService extends Thread{
     private static final int MAX_LOOP = 3;
     private static final float SATURATED_THRESHOLD = 1.2f;
     private static final int MAX_TRIGGER_COUNT = 10;
+    private static final int SOCKET_TIMEOUT_MS = 1000;
     private WsService wsService;
     public boolean isRunning;
     private String udpUrl;
@@ -59,8 +60,9 @@ public class UdpService extends Thread{
         isRunning = true;
         try {
             datagramSocket = new DatagramSocket();
-            datagramSocket.setSoTimeout(100);
+            datagramSocket.setSoTimeout(SOCKET_TIMEOUT_MS);
             InetAddress bpsAddress = InetAddress.getByName(udpUrl);
+            datagramSocket.connect(bpsAddress, udpPort);
 
             // 发trigger
             while (trigger) {
@@ -84,6 +86,7 @@ public class UdpService extends Thread{
                 }
 
                 Log.d("Test", "Test start, Loop: " + repeatCounter + ", Speed: " + sendSpeed);
+                Log.d("UDP", "Waiting for packets from " + udpUrl + ":" + udpPort + " localPort=" + datagramSocket.getLocalPort());
 
                 // 接收缓冲区
                 byte[] rcvBuf = new byte[1024];
@@ -113,6 +116,7 @@ public class UdpService extends Thread{
                         }
                     }
                 } catch (SocketTimeoutException e) {
+                    Log.d("UDP", "Receive timed out, bytes=" + rcvBytesCount);
                     // 本次收包正常结束
                     if (rcvBytesCount != 0) {
                         sampleTimer.cancel();

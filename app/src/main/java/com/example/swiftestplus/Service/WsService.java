@@ -103,12 +103,17 @@ public class WsService extends Thread{
                 try {
                     JSONObject responseJson = new JSONObject(text);
                     if (responseJson.has("udp_port")) {
-                        Log.d("WebSocket", "trigger");
+                        int announcedPort = responseJson.getInt("udp_port");
+                        Log.d("WebSocket", "udp_port: " + announcedPort);
                         // 建立udp连接&发送trigger
-                        startTime = 0;
-                        udpPort = responseJson.getInt("udp_port");
-                        udpService = new UdpService(wsService, udpUrl, udpPort);
-                        udpService.start();
+                        if (udpService == null || !udpService.isAlive()) {
+                            startTime = 0;
+                            udpPort = announcedPort;
+                            udpService = new UdpService(wsService, udpUrl, udpPort);
+                            udpService.start();
+                        } else {
+                            udpPort = announcedPort;
+                        }
                     } else if (responseJson.has("msg")) {
                         if (responseJson.get("msg").equals("start")) {
 
@@ -188,7 +193,7 @@ public class WsService extends Thread{
                             } else {
                                 // 不饱和，加速
                                 JSONObject raiseMsg = new JSONObject();
-                                raiseMsg.put("msg", "continue");
+                                raiseMsg.put("msg", "increase");
                                 // 超时器
                                 ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
                                 ScheduledFuture<?> sendTimeoutTask = executorService.schedule(() -> {
@@ -263,7 +268,9 @@ public class WsService extends Thread{
             udpService.stopService();
         }
         try {
-            udpService.join();
+            if (udpService!=null) {
+                udpService.join();
+            }
         } catch (InterruptedException e) {
             //todo: 错误处理
             e.printStackTrace();
