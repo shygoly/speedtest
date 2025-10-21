@@ -14,12 +14,16 @@
   SHA-256: `9c787f74759eabf4e43d6be0d611d4fbd755562d83089e204a3179a2788f9171`
 - Mapping bundle: `app/build/outputs/mapping/release/`
 
-## Play Console Checklist
-- Pending assets: hi-res icon export (1024×1024), feature graphic (1024×500), at least two phone screenshots, final short/full descriptions, privacy policy URL.
-- Confirm final package name/versionCode before upload; current default is `com.example.swiftestplus` with `versionCode=1`.
-- Plan to enroll in Google Play App Signing or store keystore securely for manual signing.
+## Play Console Assets
+- Play Store icon (1024×1024): `play-assets/graphics/ic_launcher_playstore.png`
+- Feature graphic (1024×500): `play-assets/graphics/feature-graphic-1024x500.png`
+- Phone screenshots (1080×2412): `play-assets/screenshots/oppo-home.png`, `play-assets/screenshots/oppo-test.png`
+- Store listing copy: short description `play-assets/store-listing/short-description_zh.txt`, full description `play-assets/store-listing/full-description_zh.txt`, release notes `play-assets/store-listing/release-notes_zh.txt`
+- Privacy policy HTML: `play-assets/privacy-policy/privacy-policy.html` — publish to `https://swiftest.thucloud.com/privacy-policy.html` (or another publicly reachable URL) before submitting
+- Confirm final package name/versionCode before upload; current default is `com.example.swiftestplus` with `versionCode=1`
+- Plan to enroll in Google Play App Signing or store keystore securely for manual signing
 
 ## Immediate Next Steps
 1. Smoke-test the signed APK on a clean device outside the VPN environment.
-2. Gather/store listing creatives and policy documentation.
-3. Upload `app-release.aab` plus `mapping.txt` to a closed testing track, then monitor vitals before promotion.
+2. Upload the privacy policy HTML to the production website and verify the public URL.
+3. Import assets into Play Console, upload `app-release.aab` plus `mapping.txt` to a closed testing track, then monitor vitals before promotion.
