@@ -14,3 +14,5 @@
 .cxx
 local.properties
 .idea/
+app/swiftest-release.jks
+signing.properties

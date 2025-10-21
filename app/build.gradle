@@ -2,6 +2,16 @@ plugins {
     id 'com.android.application'
 }
 
+def signingProps = new Properties()
+def signingPropsFile = rootProject.file("signing.properties")
+def hasSigningProps = signingPropsFile.exists()
+
+if (hasSigningProps) {
+    signingPropsFile.withInputStream { signingProps.load(it) }
+} else {
+    logger.lifecycle("signing.properties not found; release signing will need manual setup before publishing.")
+}
+
 android {
     namespace 'com.example.swiftestplus'
     compileSdk 33
@@ -16,9 +26,23 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            if (!hasSigningProps) {
+                throw new GradleException("Missing signing.properties file required for release builds.")
+            }
+            storeFile rootProject.file(signingProps.getProperty("storeFile"))
+            storePassword signingProps.getProperty("storePassword")
+            keyAlias signingProps.getProperty("keyAlias")
+            keyPassword signingProps.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

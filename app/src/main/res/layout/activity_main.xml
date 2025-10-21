@@ -34,7 +34,7 @@
                 android:gravity="center">
 
                 <TextView
-                    android:id="@+id/copyright_text"
+                    android:id="@+id/copyright_support_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="秒测网速官网：http://swiftest.thucloud.com:8080/"
